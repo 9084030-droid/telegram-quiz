@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Менеджер Маркетплейсов - Квиз</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* --- Стили для видео-кружочка --- */
+        .video-circle-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            margin-top: 10px;
+        }
+
+        .video-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #4CAF50;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .video-circle video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--tg-theme-button-color, #3390ec);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-card {
+            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        .question-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 16px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .option-btn:hover {
+            border-color: var(--tg-theme-button-color, #3390ec);
+            background-color: rgba(51, 144, 236, 0.05);
+        }
+
+        .option-btn.selected {
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border-color: var(--tg-theme-button-color, #3390ec);
+        }
+
+        .result-container {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+            padding-bottom: 40px;
+        }
+
+        .result-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .result-section {
+            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .result-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-section.strong h3 { color: #4CAF50; }
+        .result-section.weak h3 { color: #FF9800; }
+        .result-section.money h3 { color: #2196F3; }
+
+        .skill-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .skill-list li {
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 25px;
+            line-height: 1.4;
+            font-size: 15px;
+        }
+
+        .strong .skill-list li::before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .weak .skill-list li::before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .recommendation-text {
+            font-size: 13px;
+            color: #666;
+            margin-top: 6px;
+            display: block;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .salary-box {
+            background-color: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+            text-align: center;
+            border: 1px solid #bbdefb;
+        }
+
+        .salary-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1565c0;
+            margin: 5px 0;
+        }
+
+        .salary-period {
+            font-size: 12px;
+            color: #546e7a;
+        }
+
+        .vacancies-section {
+            margin-top: 25px;
+            text-align: left;
+        }
+        
+        .vacancy-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .vacancy-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .vacancy-salary {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+
+        .cta-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            animation: pulse 2s infinite;
+            text-decoration: none;
+            display: inline-block;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .timer-box {
+            background: #fff3e0;
+            border: 1px solid #ffe0b2;
+            color: #e65100;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(230, 81, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Видео-кружочек -->
+        <div class="video-circle-container">
+            <div class="video-circle" onclick="document.querySelector('video').play()">
+                <video src="https://9084030-droid.github.io/telegram-quiz/quiz/video.mp4" playsinline loop muted autoplay></video>
+            </div>
+        </div>
+
+        <!-- Прогресс бар -->
+        <div class="progress-bar" id="progressBarContainer">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Вопросы -->
+        <div id="quiz-content">
+            <!-- Вопрос 1 -->
+            <div class="question-card active" data-id="1">
+                <div class="question-title">1. Сколько времени вы готовы уделять работе? ⏳</div>
+                <div class="options-list">
+                    <div class="option-btn" onclick="selectOption(1, 'part_time')">2-4 часа в день (подработка)</div>
+                    <div class="option-btn" onclick="selectOption(1, 'full_time')">6-8 часов (полный день)</div>
+                    <div class="option-btn" onclick="selectOption(1, 'part_time')">Пока не знаю, хочу попробовать</div>
+                </div>
+            </div>
+
+            <!-- Вопрос 2 -->
+            <div class="question-card" data-id="2">
+                <div class="question-title">2. Как у вас с Excel и Google Таблицами? 📊</div>
+                <div class="options-list">
+                    <div class="option-btn" onclick="selectOption(2, 'good')">Умею делать простые формулы и таблицы</div>
+                    <div class="option-btn" onclick="selectOption(2, 'pro')">Профи! ВПР и сводные таблицы — легко</div>
+                    <div class="option-btn" onclick="selectOption(2, 'bad')">С трудом, открываю раз в год</div>
+                </div>
+            </div>
+
+            <!-- Вопрос 3 -->
+            <div class="question-card" data-id="3">
+                <div class="question-title">3. Пользовались ли вы нейросетями (ChatGPT, Midjourney)? 🤖</div>
+                <div class="options-list">
+                    <div class="option-btn" onclick="selectOption(3, 'good')">Да, использую в работе/учебе</div>
+                    <div class="option-btn" onclick="selectOption(3, 'bad')">Слышал(а), но не пробовал(а)</div>
+                    <div class="option-btn" onclick="selectOption(3, 'bad')">Что это такое?</div>
+                </div>
+            </div>
+
+            <!-- Вопрос 4 -->
+            <div class="question-card" data-id="4">
+                <div class="question-title">4. Есть ли опыт в продажах или работе с клиентами? 🤝</div>
+                <div class="options-list">
+                    <div class="option-btn" onclick="selectOption(4, 'good')">Да, работал(а) продавцом/менеджером</div>
+                    <div class="option-btn" onclick="selectOption(4, 'good')">Немного общался(ась) с клиентами</div>
+                    <div class="option-btn" onclick="selectOption(4, 'bad')">Нет, опыта нет совсем</div>
+                </div>
+            </div>
+
+            <!-- Вопрос 5 -->
+            <div class="question-card" data-id="5">
+                <div class="question-title">5. Любите ли вы цифры и аналитику? 📈</div>
+                <div class="options-list">
+                    <div class="option-btn" onclick="selectOption(5, 'good')">Да, люблю находить закономерности</div>
+                    <div class="option-btn" onclick="selectOption(5, 'neutral')">Нормально, если нужно для дела</div>
+                    <div class="option-btn" onclick="selectOption(5, 'bad')">Нет, цифры наводят тоску</div>
+                </div>
+            </div>
+
+            <!-- Вопрос 6 -->
+            <div class="question-card" data-id="6">
+                <div class="question-title">6. Готовы ли вы учиться новому? 📚</div>
+                <div class="options-list">
+                    <div class="option-btn" onclick="selectOption(6, 'good')">Да, обожаю учиться!</div>
+                    <div class="option-btn" onclick="selectOption(6, 'neutral')">Готов(а), если это повысит доход</div>
+                    <div class="option-btn" onclick="selectOption(6, 'bad')">Тяжело дается обучение</div>
+                </div>
+            </div>
+
+            <!-- Вопрос 7 -->
+            <div class="question-card" data-id="7">
+                <div class="question-title">7. Какая цель вас больше мотивирует? 🎯</div>
+                <div class="options-list">
+                    <div class="option-btn" onclick="finishQuiz('money')">Выйти на доход 100к+ удаленно</div>
+                    <div class="option-btn" onclick="finishQuiz('freedom')">Свободный график и работа из дома</div>
+                    <div class="option-btn" onclick="finishQuiz('career')">Стать крутым экспертом в e-commerce</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Результаты -->
+        <div id="result-content" class="result-container">
+            <div class="result-header">Ваш результат готов! 🎉</div>
+
+            <!-- Таймер вебинара -->
+            <div id="webinar-timer" class="timer-box" style="display:none;">
+                🔥 Ближайший вебинар СЕГОДНЯ в <span id="webinar-time">15:00</span> (МСК)<br>
+                Осталось мало мест!
+            </div>
+
+            <!-- Сильные стороны -->
+            <div class="result-section strong">
+                <h3>💪 Твои супер-силы:</h3>
+                <ul class="skill-list" id="strong-skills"></ul>
+            </div>
+
+            <!-- Зоны роста -->
+            <div class="result-section weak">
+                <h3>⚡️ Зоны роста (мы подтянем!):</h3>
+                <ul class="skill-list" id="weak-skills"></ul>
+            </div>
+
+            <!-- Доход -->
+            <div class="result-section money">
+                <h3>💰 Твой потенциальный доход:</h3>
+                <div class="salary-box">
+                    <div class="salary-period">Через 2-3 месяца:</div>
+                    <div class="salary-amount" id="salary-amount">от 60 000 ₽</div>
+                    <div class="salary-period" style="margin-top: 5px;">Через год: от 150 000 ₽+</div>
+                </div>
+                <p style="font-size: 13px; color: #666; margin-top: 10px;">
+                    *При условии обучения и практики. Твоя база позволяет стартовать быстро!
+                </p>
+            </div>
+
+             <!-- Вакансии -->
+             <div class="result-section vacancies-section">
+                <h3>🔥 Свежие вакансии (примеры):</h3>
+                <div id="vacancies-list"></div>
+            </div>
+
+            <!-- Кнопка -->
+            <a id="webinar-link" href="#" target="_blank" class="cta-button">
+                🎓 Узнать, как прокачать навыки
+            </a>
+            
+            <p style="font-size: 12px; color: #999; margin-top: 15px;">
+                Нажми кнопку, чтобы получить план развития
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let answers = {};
+        let currentQuestion = 1;
+        const totalQuestions = 7;
+
+        // Данные
+        const vacancies = [
+            { title: "Менеджер по маркетплейсам (WB)", salary: "до 120 000 руб.", type: "Удаленно", company: "ИП Смирнов" },
+            { title: "Менеджер маркетплейсов WB", salary: "от 60 000 до 100 000 руб.", type: "Удаленно", company: "BrandsPro" },
+            { title: "Менеджер (WB / Ozon / Яндекс)", salary: "от 40 000 до 100 000 руб.", type: "Гибрид", company: "TopRetail" }
+        ];
+
+        const weakRecommendations = {
+            excel: "📊 <b>Excel — это фундамент.</b> Без него ты будешь тратить часы на то, что делается за минуты. Селлеры ценят скорость! В курсе мы даем готовые шаблоны таблиц — тебе останется только подставлять цифры.",
+            ai: "🤖 <b>Нейросети — твой ускоритель x5.</b> Пока другие пишут описания часами, ты сделаешь это за 5 минут с ChatGPT. Без этого навыка сейчас трудно конкурировать. Мы научим тебя писать промпты, которые продают!",
+            sales: "🤝 <b>Продажи — это психология.</b> Не умеешь общаться — теряешь деньги. Мы дадим скрипты общения с поставщиками и покупателями, которые работают безотказно.",
+            analytics: "📈 <b>Аналитика — это деньги селлера.</b> Если ты не видишь, какой товар убыточен — ты сливаешь бюджет. Мы научим читать цифры как открытую книгу и находить прибыль там, где другие не видят."
+        };
+
+        // Выбор ответа
+        window.selectOption = function(qId, value) {
+            answers[qId] = value;
+            
+            const currentCard = document.querySelector(`.question-card[data-id='${qId}']`);
+            currentCard.style.opacity = '0';
+            
+            setTimeout(() => {
+                currentCard.classList.remove('active');
+                if (qId < totalQuestions) {
+                    currentQuestion++;
+                    const nextCard = document.querySelector(`.question-card[data-id='${currentQuestion}']`);
+                    nextCard.classList.add('active');
+                    nextCard.style.opacity = '0';
+                    setTimeout(() => nextCard.style.opacity = '1', 50);
+                    updateProgress();
+                }
+            }, 300);
+        };
+
+        function updateProgress() {
+            const percent = ((currentQuestion - 1) / totalQuestions) * 100;
+            document.getElementById('progressFill').style.width = `${percent}%`;
+        }
+
+        window.finishQuiz = function(finalGoal) {
+            answers[7] = finalGoal;
+            document.getElementById('progressFill').style.width = '100%';
+            
+            document.getElementById('quiz-content').style.display = 'none';
+            document.getElementById('progressBarContainer').style.display = 'none';
+            
+            // Имитация загрузки
+            setTimeout(() => {
+                showResults();
+            }, 1000);
+        };
+
+        function showResults() {
+            const resultDiv = document.getElementById('result-content');
+            resultDiv.style.display = 'block';
+            
+            const strongList = document.getElementById('strong-skills');
+            const weakList = document.getElementById('weak-skills');
+            
+            // Анализ ответов
+            if (answers[2] === 'good' || answers[2] === 'pro') {
+                strongList.innerHTML += `<li><b>Работа с цифрами (Excel):</b> Отличная база! Ты быстро освоишь аналитику.</li>`;
+            } else {
+                weakList.innerHTML += `<li><b>Excel и Таблицы:</b><span class="recommendation-text">${weakRecommendations.excel}</span></li>`;
+            }
+
+            if (answers[3] === 'good') {
+                strongList.innerHTML += `<li><b>Нейросети:</b> Супер! Это даст тебе преимущество перед 80% новичков.</li>`;
+            } else {
+                weakList.innerHTML += `<li><b>Владение нейросетями:</b><span class="recommendation-text">${weakRecommendations.ai}</span></li>`;
+            }
+
+            if (answers[4] === 'good') {
+                strongList.innerHTML += `<li><b>Навыки коммуникации:</b> Ты умеешь продавать идеи, это важно для работы с поставщиками.</li>`;
+            } else {
+                weakList.innerHTML += `<li><b>Понимание продаж:</b><span class="recommendation-text">${weakRecommendations.sales}</span></li>`;
+            }
+
+            if (answers[5] === 'good') {
+                strongList.innerHTML += `<li><b>Аналитический склад ума:</b> Ты видишь деньги в цифрах. Это самое ценное качество!</li>`;
+            } else if (answers[5] === 'bad') {
+                weakList.innerHTML += `<li><b>Любовь к цифрам:</b><span class="recommendation-text">${weakRecommendations.analytics}</span></li>`;
+            }
+
+            // Доход
+            const salaryEl = document.getElementById('salary-amount');
+            if (answers[1] === 'full_time') {
+                salaryEl.innerHTML = "от 75 000 ₽";
+            } else {
+                salaryEl.innerHTML = "от 45 000 ₽";
+            }
+
+            // Вакансии
+            const vacanciesListEl = document.getElementById('vacancies-list');
+            vacancies.forEach(vac => {
+                vacanciesListEl.innerHTML += `
+                    <div class="vacancy-card">
+                        <div class="vacancy-title">${vac.title}</div>
+                        <div class="vacancy-salary">${vac.salary}</div>
+                        <div style="font-size: 12px; color: #777;">${vac.company} • ${vac.type}</div>
+                    </div>
+                `;
+            });
+
+            setupWebinarLink();
+        }
+
+        function setupWebinarLink() {
+            const now = new Date();
+            const mskOffset = 3; 
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const mskTime = new Date(utc + (3600000 * mskOffset));
+            const hours = mskTime.getHours();
+            
+            const linkBtn = document.getElementById('webinar-link');
+            const timerBox = document.getElementById('webinar-timer');
+            const timeSpan = document.getElementById('webinar-time');
+
+            const link15 = "https://intpro.getcourse.ru/pl/webinar/show?id=3001650"; 
+            const link19 = "https://intpro.getcourse.ru/pl/webinar/show?id=3006308"; 
+
+            timerBox.style.display = 'block';
+
+            if (hours < 15) {
+                linkBtn.href = link15;
+                timeSpan.innerText = "15:00";
+            } else if (hours >= 15 && hours < 19) {
+                linkBtn.href = link19;
+                timeSpan.innerText = "19:00";
+            } else {
+                linkBtn.href = link15; 
+                timeSpan.innerText = "ЗАВТРА в 15:00";
+                timerBox.innerHTML = "🌙 На сегодня вебинары закончились.<br>Запишись на <b>ЗАВТРА в 15:00</b> (МСК)!";
+            }
+        }
+    </script>
+</body>
+</html>
