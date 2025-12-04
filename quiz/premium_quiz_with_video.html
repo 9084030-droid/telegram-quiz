@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Премиум Квиз с Видео</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .video-container {
+            margin-bottom: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+        
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #000;
+        }
+        
+        .question-section {
+            display: none;
+        }
+        
+        .question-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .question-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            font-size: 16px;
+        }
+        
+        .option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .option.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .option.correct {
+            border-color: #22c55e;
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .option.incorrect {
+            border-color: #ef4444;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-next:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-prev {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-prev:hover {
+            background: #d0d0d0;
+        }
+        
+        .progress {
+            height: 6px;
+            background: #e0e0e0;
+            margin-bottom: 20px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .results {
+            text-align: center;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .results-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .results h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .results p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .score {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Премиум Квиз</h1>
+            <p>Ответьте на вопросы о видео</p>
+        </div>
+        
+        <div class="content">
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="video-container">
+                <video id="quizVideo" controls>
+                    <source src="video.mp4" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+            </div>
+            
+            <div id="questionsContainer"></div>
+            
+            <div class="results" id="results">
+                <div class="results-icon" id="resultsIcon">🎉</div>
+                <h2 id="resultsTitle">Отлично!</h2>
+                <p id="resultsMessage"></p>
+                <div class="score" id="score"></div>
+                <button class="restart-btn" onclick="restartQuiz()">Начать заново</button>
+            </div>
+            
+            <div class="buttons" id="buttons">
+                <button class="btn-prev" onclick="previousQuestion()" style="display: none;" id="prevBtn">← Назад</button>
+                <button class="btn-next" onclick="nextQuestion()" disabled id="nextBtn">Далее →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Вопросы квиза
+        const questions = [
+            {
+                question: "Вопрос 1: О чём говорится в видео?",
+                options: [
+                    { text: "Вариант А", correct: false },
+                    { text: "Вариант Б", correct: true },
+                    { text: "Вариант В", correct: false }
+                ]
+            },
+            {
+                question: "Вопрос 2: Какой второй пункт?",
+                options: [
+                    { text: "Ответ 1", correct: true },
+                    { text: "Ответ 2", correct: false },
+                    { text: "Ответ 3", correct: false }
+                ]
+            },
+            {
+                question: "Вопрос 3: Финальный вопрос?",
+                options: [
+                    { text: "Опция X", correct: false },
+                    { text: "Опция Y", correct: false },
+                    { text: "Опция Z", correct: true }
+                ]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let answers = [];
+
+        function renderQuestion() {
+            const container = document.getElementById('questionsContainer');
+            const q = questions[currentQuestion];
+            
+            container.innerHTML = `
+                <div class="question-section active">
+                    <div class="question-title">${q.question}</div>
+                    <div class="options" id="optionsContainer">
+                        ${q.options.map((opt, i) => `
+                            <div class="option" onclick="selectOption(${i})">${opt.text}</div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            updateProgress();
+            updateButtons();
+        }
+
+        function selectOption(index) {
+            const options = document.querySelectorAll('.option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            options[index].classList.add('selected');
+            answers[currentQuestion] = index;
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.style.display = currentQuestion > 0 ? 'block' : 'none';
+            nextBtn.textContent = currentQuestion === questions.length - 1 ? '✅ Завершить' : 'Далее →';
+            nextBtn.disabled = answers[currentQuestion] === undefined;
+        }
+
+        function showResults() {
+            document.getElementById('questionsContainer').style.display = 'none';
+            document.getElementById('buttons').style.display = 'none';
+            
+            const correct = answers.filter((ans, i) => {
+                return questions[i].options[ans].correct;
+            }).length;
+            
+            const percentage = Math.round((correct / questions.length) * 100);
+            
+            const resultsDiv = document.getElementById('results');
+            document.getElementById('score').textContent = `${correct}/${questions.length}`;
+            document.getElementById('resultsMessage').textContent = `Вы ответили правильно на ${percentage}% вопросов`;
+            
+            if (percentage >= 80) {
+                document.getElementById('resultsIcon').textContent = '🎉';
+                document.getElementById('resultsTitle').textContent = 'Отлично!';
+            } else if (percentage >= 60) {
+                document.getElementById('resultsIcon').textContent = '👍';
+                document.getElementById('resultsTitle').textContent = 'Хорошо!';
+            } else {
+                document.getElementById('resultsIcon').textContent = '📚';
+                document.getElementById('resultsTitle').textContent = 'Попробуйте ещё раз';
+            }
+            
+            resultsDiv.classList.add('show');
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            answers = [];
+            document.getElementById('questionsContainer').style.display = 'block';
+            document.getElementById('buttons').style.display = 'flex';
+            document.getElementById('results').classList.remove('show');
+            renderQuestion();
+        }
+
+        // Инициализация
+        renderQuestion();
+    </script>
+</body>
+</html>
